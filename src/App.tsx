@@ -24,8 +24,13 @@ export default function App() {
           {activeTab === 'overview' && <DashboardView />}
           {activeTab === 'notes' && <NotesView />}
           {activeTab === 'schedule' && <ScheduleView />}
-          {activeTab === 'analytics' && <AnalyticsView />}
-          {activeTab === 'intelligence' && <AINewsView />}
+          {activeTab === 'analytics' && (
+            <div className="space-y-12 max-w-7xl mx-auto">
+              <AnalyticsView />
+              <AINewsView />
+            </div>
+          )}
+          {activeTab === 'email' && <EmailView />}
         </main>
       </div>
     </div>

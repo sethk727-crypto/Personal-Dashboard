@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Mic, Calendar, Cpu, Activity, Zap } from 'lucide-react';
+import { Home, Mic, Calendar, Cpu, Activity, Zap, Mail } from 'lucide-react';
 import { Tab } from '../types';
 
 interface SidebarProps {
@@ -10,10 +10,10 @@ interface SidebarProps {
 export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const navItems = [
     { id: 'overview', icon: Home, label: 'Executive Overview' },
-    { id: 'notes', icon: Mic, label: 'Cognitive Notes' },
-    { id: 'schedule', icon: Calendar, label: 'Schedule Sync' },
-    { id: 'analytics', icon: Activity, label: 'Analytics' },
-    { id: 'intelligence', icon: Cpu, label: 'AI Intelligence Hub' },
+    { id: 'notes', icon: Mic, label: 'Cognitive Hub' },
+    { id: 'schedule', icon: Calendar, label: 'Schedule & Productivity' },
+    { id: 'analytics', icon: Activity, label: 'Data Intelligence' },
+    { id: 'email', icon: Mail, label: 'Communication Triage' },
   ] as const;
 
   return (
