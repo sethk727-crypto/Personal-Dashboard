@@ -1,4 +1,4 @@
-export type Tab = 'home' | 'notes' | 'schedule' | 'ai' | 'email';
+export type Tab = 'overview' | 'notes' | 'schedule' | 'analytics' | 'intelligence';
 
 export interface Note {
   filename: string;
@@ -10,7 +10,7 @@ export interface AINewsItem {
   id: string;
   title: string;
   source: string;
-  abstract: string;
+  abstract: string[];
   timestamp: string;
   impactScore: number;
 }

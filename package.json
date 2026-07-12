@@ -1,32 +1,30 @@
-import React, { useState } from 'react';
-import { Tab } from './types';
-import { Sidebar } from './components/Sidebar';
-import { Topbar } from './components/Topbar';
-import { DashboardView } from './components/DashboardView';
-import { NotesView } from './components/NotesView';
-import { ScheduleView } from './components/ScheduleView';
-import { AINewsView } from './components/AINewsView';
-import { EmailView } from './components/EmailView';
-
-export default function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('home');
-
-  return (
-    <div className="flex h-screen bg-[#050811] text-slate-200 overflow-hidden font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <Topbar />
-        
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar relative z-10">
-          {activeTab === 'home' && <DashboardView />}
-          {activeTab === 'notes' && <NotesView />}
-          {activeTab === 'schedule' && <ScheduleView />}
-          {activeTab === 'ai' && <AINewsView />}
-          {activeTab === 'email' && <EmailView />}
-        </main>
-      </div>
-    </div>
-  );
+{
+  "name": "lifeos",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "start": "node dist/server.cjs"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "lucide-react": "^0.300.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^10.1.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.24",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "esbuild": "^0.20.1",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.0"
+  }
 }
-
