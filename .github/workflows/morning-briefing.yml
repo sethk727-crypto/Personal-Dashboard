@@ -1,0 +1,48 @@
+name: Morning Email Briefing
+
+on:
+  schedule:
+    # Runs every day at 6:00 AM EST (10:00 AM UTC)
+    - cron: '0 10 * * *'
+  workflow_dispatch: # Allows you to trigger it manually to test it
+
+jobs:
+  build-briefing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Aggregate Recent Notes
+        id: aggregate
+        run: |
+          echo "### 🌅 Your Morning Briefing" > briefing.md
+          echo "Here is a summary of everything you captured yesterday:" >> briefing.md
+          echo "" >> briefing.md
+          
+          # Find all markdown files modified or created in the notes directory in the last 24 hours
+          find notes/ -name "*.md" -mtime -1 | while read file; do
+            echo "---" >> briefing.md
+            cat "$file" >> briefing.md
+            echo "" >> briefing.md
+          done
+          
+          # Check if we actually found any notes
+          if [ ! -s briefing.md ]; then
+            echo "No new notes found from yesterday!" >> briefing.md
+          fi
+
+      - name: Send Email Briefing
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "📋 Your LifeOS Morning Briefing"
+          to: ${{ secrets.EMAIL_USERNAME }} # Sends directly to your email address automatically
+          from: "LifeOS Dashboard"
+          convert_markdown: true
+          html_body: file://briefing.md
