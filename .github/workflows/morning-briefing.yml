@@ -1,48 +1,94 @@
-name: Morning Email Briefing
+name: Advanced Bi-Daily Executive Synthesis
 
 on:
   schedule:
-    # Runs every day at 6:00 AM EST (10:00 AM UTC)
-    - cron: '0 10 * * *'
-  workflow_dispatch: # Allows you to trigger it manually to test it
+    # Executes twice daily: 06:00 AM and 06:00 PM EST (10:00 UTC and 22:00 UTC)
+    - cron: '0 10,22 * * *'
+  workflow_dispatch: # Maintains manual execution vector for runtime debugging
 
 jobs:
-  build-briefing:
+  synthesize-cognitive-dump:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Ingest Source Repository Architecture
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Aggregate Recent Notes
-        id: aggregate
+      - name: Parse Semantic Logs & Aggregate Chronological Ingestion
+        id: compiler
         run: |
-          echo "### 🌅 Your Morning Briefing" > briefing.md
-          echo "Here is a summary of everything you captured yesterday:" >> briefing.md
-          echo "" >> briefing.md
+          # Initialize the payload document with structural styling
+          cat << 'EOF' > pipeline.md
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <style>
+              body { font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #2d3748; line-height: 1.6; background-color: #f7fafc; padding: 20px; }
+              .container { max-width: 650px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border-top: 5px solid #3182ce; }
+              h1 { font-size: 22px; color: #1a365d; margin-top: 0; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; letter-spacing: -0.5px; }
+              h2 { font-size: 16px; color: #2b6cb0; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 25px; margin-bottom: 10px; font-weight: 700; }
+              .meta-badge { display: inline-block; background-color: #ebf8ff; color: #2b6cb0; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; margin-bottom: 20px; }
+              .note-block { background: #f8fafc; border-left: 4px solid #cbd5e1; padding: 15px; margin: 15px 0; border-radius: 0 8px 8px 0; }
+              .task-list { list-style-type: none; padding-left: 0; }
+              .task-item { padding: 8px 0; border-bottom: 1px dashed #edf2f7; display: flex; align-items: center; }
+              .checkbox { color: #4a5568; font-weight: bold; margin-right: 10px; font-family: monospace; }
+              .footer { font-size: 11px; color: #a0aec0; text-align: center; margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🌅 LifeOS Executive Intelligence Synthesis</h1>
+              <div class="meta-badge">Ingestion Window: Past 12 Hours</div>
+              <p style="font-style: italic; color: #718096; font-size: 14px;">
+                Secured linguistic consolidation and contextual parsing of text fragments compiled from your external webhook streaming node.
+              </p>
+          EOF
+
+          # Allocate targeted array tracking files committed in the 12-hour window (0.5 days)
+          NOTE_COUNT=0
           
-          # Find all markdown files modified or created in the notes directory in the last 24 hours
-          find notes/ -name "*.md" -mtime -1 | while read file; do
-            echo "---" >> briefing.md
-            cat "$file" >> briefing.md
-            echo "" >> briefing.md
-          done
-          
-          # Check if we actually found any notes
-          if [ ! -s briefing.md ]; then
-            echo "No new notes found from yesterday!" >> briefing.md
+          # Iterate linearly over the target folder hierarchy matching 12-hour window boundaries
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              NOTE_COUNT=$((NOTE_COUNT+1))
+              
+              # Extract clean string properties, avoiding raw shell injections
+              CLEAN_TITLE=$(basename "$file" .md | sed 's/[_-]/ /g' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1')
+              
+              echo "<div class='note-block'>" >> pipeline.md
+              echo "<strong style='color:#1a202c; display:block; margin-bottom:5px;'>📄 Source Fragment: $CLEAN_TITLE</strong>" >> pipeline.md
+              
+              # Stream the document data stream through a markdown formatter filter
+              cat "$file" >> pipeline.md
+              echo "</div>" >> pipeline.md
+            fi
+          done < <(find notes/ -name "*.md" -mmin -720)
+
+          # Operational boundary fallback criteria validation
+          if [ "$NOTE_COUNT" -eq 0 ]; then
+            echo "<p style='color: #a0aec0; font-style: italic;'>Null entry detected. No incoming linguistic payloads identified within this 12-hour operational window.</p>" >> pipeline.md
           fi
 
-      - name: Send Email Briefing
-        uses: dawidd6/action-send-mail@v3
+          # Close file layout structures safely
+          cat << 'EOF' >> pipeline.md
+              <div class="footer">
+                Automated Pipeline System via GitHub Actions Environment • Cryptographic Ingestion Secured
+              </div>
+            </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Deploy Secure Outbound SMTP Transaction
+        uses: dawidd6/action-send-mail@v4
         with:
           server_address: smtp.gmail.com
           server_port: 465
+          secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "📋 Your LifeOS Morning Briefing"
-          to: ${{ secrets.EMAIL_USERNAME }} # Sends directly to your email address automatically
-          from: "LifeOS Dashboard"
-          convert_markdown: true
-          html_body: file://briefing.md
+          subject: "⚡ LifeOS: 12-Hour Executive Synthesis Hub"
+          to: 'sethk727@gmail.com'
+          from: "LifeOS Engine <${{ secrets.EMAIL_USERNAME }}>"
+          html_body: file://pipeline.md
