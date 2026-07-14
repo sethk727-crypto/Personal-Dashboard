@@ -1,12 +1,282 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LifeOS Dashboard</title>
-  </head>
-  <body class="bg-slate-900 text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="LifeOS — personal terminal command center: nutrition telemetry, voice-note timeline, schedule tracker, email triage, and quantitative hedge simulator." />
+  <title>LifeOS // Terminal Command Center</title>
+  <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'&gt;&lt;rect width='16' height='16' rx='3' fill='%23090D16'/&gt;&lt;path d='M4 5l3 3-3 3' stroke='%233b82f6' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/&gt;&lt;path d='M8.5 11h3.5' stroke='%2310b981' stroke-width='1.6' stroke-linecap='round'/&gt;&lt;/svg&gt;" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <!-- ============================= TOPBAR ============================= -->
+  <header class="topbar" role="banner">
+    <div class="brand">
+      <span class="brand-glyph" aria-hidden="true">&gt;_</span>
+      <h1 class="brand-name">LIFEOS<span class="brand-dim">//</span>TERMINAL</h1>
+      <span class="build-tag">v3.0 · PAGES EDGE</span>
+    </div>
+
+    <div class="topbar-center" aria-hidden="true">
+      <div class="ticker" id="ticker">
+        <div class="ticker-track" id="ticker-track">
+          <span class="ticker-item">BOOTSTRAPPING TELEMETRY STREAMS…</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar-status">
+      <div class="sync-block">
+        <span class="led led-sync" id="sync-led" aria-hidden="true"></span>
+        <span class="sync-label" id="sync-label">SYNCING</span>
+      </div>
+      <div class="clock-block">
+        <time class="clock" id="clock" datetime="">--:--:--</time>
+        <span class="date-readout" id="date-readout">····</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================= MAIN GRID ============================= -->
+  <main class="grid" id="module-grid">
+
+    <!-- ===== MODULE 01 · NUTRITION & CALORIC TELEMETRY ENGINE ===== -->
+    <section class="panel span-5" id="module-nutrition" aria-labelledby="nutrition-title">
+      <header class="panel-head">
+        <div class="panel-id">
+          <span class="led" data-module-led="nutrition" aria-hidden="true"></span>
+          <h2 class="panel-title" id="nutrition-title">MOD-01 :: NUTRITION &amp; CALORIC TELEMETRY</h2>
+        </div>
+        <span class="panel-chip" id="nut-status">STANDBY</span>
+      </header>
+
+      <div class="panel-body">
+        <div class="stat-grid">
+          <div class="stat-tile">
+            <span class="stat-label">CALORIES TRACKED</span>
+            <span class="stat-value accent-blue"><span id="nut-calories">0</span><small class="stat-unit">kcal</small></span>
+            <span class="stat-sub" id="nut-calories-sub">of — target</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">REMAINING ALLOWANCE</span>
+            <span class="stat-value accent-green"><span id="nut-remaining">0</span><small class="stat-unit">kcal</small></span>
+            <span class="stat-sub" id="nut-remaining-sub">until daily ceiling</span>
+          </div>
+          <div class="stat-tile">
+            <span class="stat-label">DEFICIT DELTA</span>
+            <span class="stat-value accent-amber"><span id="nut-deficit">0</span><small class="stat-unit">kcal</small></span>
+            <span class="stat-sub" id="nut-deficit-sub">vs maintenance</span>
+          </div>
+        </div>
+
+        <div class="protein-block">
+          <div class="bar-head">
+            <span class="bar-label" id="nut-protein-caption">PROTEIN INTAKE <span class="bar-target">// 180g TARGET FLOOR</span></span>
+            <span class="bar-readout" id="nut-protein-label">0g / 180g</span>
+          </div>
+          <div class="progress" role="progressbar" aria-labelledby="nut-protein-caption" aria-valuemin="0" aria-valuemax="180" aria-valuenow="0" id="nut-protein-track">
+            <div class="progress-fill fill-green" id="nut-protein-bar" style="width:0%"></div>
+            <div class="progress-floor" title="180g floor" aria-hidden="true"></div>
+          </div>
+          <div class="macro-minis">
+            <span class="macro-mini">CARBS <b id="nut-carbs">0g</b></span>
+            <span class="macro-mini">FATS <b id="nut-fats">0g</b></span>
+            <span class="macro-mini">HYDRATION <b id="nut-hydration">0oz</b></span>
+            <span class="macro-mini">LAST SYNC <b id="nut-updated">—</b></span>
+          </div>
+        </div>
+
+        <ul class="meal-log" id="nut-meals" aria-label="Logged intake events"></ul>
+
+        <aside class="doctrine">
+          <h3 class="doctrine-title">METABOLIC DOCTRINE — DEFICIT LINE PROTOCOL</h3>
+          <div class="formula" role="math" aria-label="Delta E equals Energy In minus Energy Out">
+            <span class="formula-var">ΔE</span>
+            <span class="formula-op">=</span>
+            <span class="formula-term">Energy<sub>in</sub></span>
+            <span class="formula-op">−</span>
+            <span class="formula-term">Energy<sub>out</sub></span>
+          </div>
+          <p class="doctrine-copy">
+            Holding a controlled negative <em>ΔE</em> — intake pinned deliberately below expenditure — forces the
+            system to close the energy gap from stored substrate, shifting fuel selection toward
+            <strong>lipid oxidation</strong> while sparing lean mass behind the 180g protein floor. Because intake
+            arrives as protein-forward, low-glycemic loads, <strong>blood glucose holds a flat, stable band</strong>
+            instead of spiking and crashing; stable glucose means no reactive-hypoglycemia fog, steadier
+            catecholamine tone, and a clean, sustained supply of energy to both working muscle and the
+            prefrontal cortex. The result is a compounding edge: fat mass trends down on the deficit line while
+            training output, focus depth, and decision quality stay flat-to-up — a controlled delta, not a crash.
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== MODULE 05 · QUANTITATIVE RISK & HEDGING SIMULATOR ===== -->
+    <section class="panel span-4" id="module-hedge" aria-labelledby="hedge-title">
+      <header class="panel-head">
+        <div class="panel-id">
+          <span class="led" data-module-led="hedge" data-state="ok" aria-hidden="true"></span>
+          <h2 class="panel-title" id="hedge-title">MOD-05 :: QUANT RISK &amp; HEDGING SIMULATOR</h2>
+        </div>
+        <span class="panel-chip chip-amber">LIVE MATH</span>
+      </header>
+
+      <div class="panel-body">
+        <form class="hedge-form" id="hedge-form" autocomplete="off">
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">PARLAY PAYOUT ANCHOR ($)</span>
+              <input type="number" id="hedge-payout" inputmode="decimal" min="0" step="10" value="2000" />
+            </label>
+            <label class="field">
+              <span class="field-label">PARLAY STAKE ($)</span>
+              <input type="number" id="hedge-stake" inputmode="decimal" min="0" step="5" value="50" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label class="field">
+              <span class="field-label">LIVE HEDGE LINE (AMERICAN)</span>
+              <input type="number" id="hedge-odds" inputmode="numeric" step="5" value="-110" />
+            </label>
+            <label class="field">
+              <span class="field-label">HEDGE STAKE ($)</span>
+              <input type="number" id="hedge-amount" inputmode="decimal" min="0" step="5" value="0" />
+            </label>
+          </div>
+
+          <label class="field slider-field">
+            <span class="field-label">HEDGE STAKE SWEEP</span>
+            <input type="range" id="hedge-slider" min="0" max="2000" step="1" value="0" aria-label="Hedge stake sweep" />
+          </label>
+
+          <div class="hedge-actions">
+            <button type="button" class="btn btn-blue" id="btn-optimal">SET EQUAL-PROFIT LOCK</button>
+            <button type="button" class="btn btn-ghost" id="btn-floor">SET BREAK-EVEN FLOOR</button>
+          </div>
+        </form>
+
+        <div class="hedge-verdict" id="hedge-verdict" role="status">AWAITING PARAMETERS…</div>
+
+        <div class="window-block">
+          <div class="bar-head">
+            <span class="bar-label">PROTECTED PROFIT WINDOW</span>
+            <span class="bar-readout" id="window-readout">—</span>
+          </div>
+          <div class="window-bar" id="window-bar" aria-hidden="true">
+            <div class="window-zone" id="window-zone"></div>
+            <div class="window-marker" id="window-marker"></div>
+          </div>
+          <div class="window-legend">
+            <span class="legend-item"><i class="swatch swatch-amber"></i>EXPOSED</span>
+            <span class="legend-item"><i class="swatch swatch-green"></i>PROTECTED</span>
+            <span class="legend-item"><i class="swatch swatch-blue"></i>CURRENT HEDGE</span>
+          </div>
+        </div>
+
+        <dl class="hedge-readouts">
+          <div class="readout"><dt>DECIMAL LINE</dt><dd id="out-decimal">—</dd></div>
+          <div class="readout"><dt>EQUAL-PROFIT HEDGE H*</dt><dd id="out-optimal" class="accent-blue">—</dd></div>
+          <div class="readout"><dt>GUARANTEED LOCK @ H*</dt><dd id="out-lock" class="accent-green">—</dd></div>
+          <div class="readout"><dt>BREAK-EVEN FLOOR</dt><dd id="out-floor" class="accent-amber">—</dd></div>
+          <div class="readout"><dt>MAX HEDGE CEILING</dt><dd id="out-ceiling" class="accent-amber">—</dd></div>
+          <div class="readout"><dt>P/L — PARLAY HITS</dt><dd id="out-scenario-a">—</dd></div>
+          <div class="readout"><dt>P/L — HEDGE HITS</dt><dd id="out-scenario-b">—</dd></div>
+          <div class="readout"><dt>LOCKED ROI ON RISK</dt><dd id="out-roi">—</dd></div>
+        </dl>
+
+        <p class="hedge-note">
+          Model: H* = Payout ÷ DecimalLine equalizes both branches; floor = Stake ÷ (DecimalLine − 1)
+          neutralizes downside; ceiling = Payout − Stake caps over-hedge. All figures are pre-vig cash flows.
+        </p>
+      </div>
+    </section>
+
+    <!-- ===== MODULE 04 · AUTOMATED EMAIL TRIAGE & NOISE FILTER ===== -->
+    <section class="panel span-3" id="module-email" aria-labelledby="email-title">
+      <header class="panel-head">
+        <div class="panel-id">
+          <span class="led" data-module-led="email" aria-hidden="true"></span>
+          <h2 class="panel-title" id="email-title">MOD-04 :: CRITICAL COMMS ONLY</h2>
+        </div>
+        <span class="panel-chip" id="email-chip">FILTERING</span>
+      </header>
+
+      <div class="panel-body">
+        <div class="triage-meta" id="email-meta">
+          <span><b id="email-scanned">0</b> SCANNED</span>
+          <span class="meta-div">·</span>
+          <span><b id="email-suppressed">0</b> SUPPRESSED</span>
+          <span class="meta-div">·</span>
+          <span><b id="email-passed">0</b> PASSED FILTER</span>
+        </div>
+        <ol class="email-list" id="email-list" aria-label="Critical communications, highest urgency first"></ol>
+        <p class="module-footnote">Newsletter · receipt · promo classes auto-suppressed by background triage nodes.</p>
+      </div>
+    </section>
+
+    <!-- ===== MODULE 02 · DYNAMIC VOICE-NOTE LOG TIMELINE ===== -->
+    <section class="panel span-5" id="module-notes" aria-labelledby="notes-title">
+      <header class="panel-head">
+        <div class="panel-id">
+          <span class="led" data-module-led="notes" aria-hidden="true"></span>
+          <h2 class="panel-title" id="notes-title">MOD-02 :: VOICE-NOTE LOG TIMELINE</h2>
+        </div>
+        <span class="panel-chip" id="notes-chip">INGESTING</span>
+      </header>
+
+      <div class="panel-body">
+        <div class="triage-meta">
+          <span><b id="notes-count">0</b> TRANSCRIPTS LIVE</span>
+          <span class="meta-div">·</span>
+          <span><b id="notes-suppressed">0</b> CORRUPT PAYLOADS QUARANTINED</span>
+        </div>
+        <div class="note-feed" id="notes-feed"></div>
+        <p class="module-footnote">Source: phone transcription webhook → <code>./notes/</code> commit stream. Click any entry to expand the full transcript.</p>
+      </div>
+    </section>
+
+    <!-- ===== MODULE 03 · CALENDAR & INTEGRATED SCHEDULE TRACKER ===== -->
+    <section class="panel span-7" id="module-schedule" aria-labelledby="schedule-title">
+      <header class="panel-head">
+        <div class="panel-id">
+          <span class="led" data-module-led="schedule" aria-hidden="true"></span>
+          <h2 class="panel-title" id="schedule-title">MOD-03 :: SCHEDULE TRACKER — <span id="schedule-day">TODAY</span></h2>
+        </div>
+        <span class="panel-chip" id="schedule-chip"><b id="schedule-count">0</b> BLOCKS</span>
+      </header>
+
+      <div class="panel-body">
+        <div class="cat-legend" aria-hidden="true">
+          <span class="legend-item"><i class="swatch swatch-blue"></i>ACADEMIC</span>
+          <span class="legend-item"><i class="swatch swatch-violet"></i>INTERNSHIP</span>
+          <span class="legend-item"><i class="swatch swatch-amber"></i>NETWORKING</span>
+          <span class="legend-item"><i class="swatch swatch-green"></i>ATHLETIC</span>
+          <span class="legend-item"><i class="swatch swatch-slate"></i>PROJECT</span>
+        </div>
+        <ol class="timeline" id="schedule-timeline" aria-label="Today's schedule, chronological"></ol>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================= FOOTER / BOOT LOG ============================= -->
+  <footer class="console" role="contentinfo">
+    <div class="console-head">
+      <span class="console-title">SYSTEM LOG</span>
+      <span class="console-uptime" id="uptime">UPTIME 00:00:00</span>
+    </div>
+    <ol class="boot-log" id="boot-log" aria-live="polite"></ol>
+    <div class="prompt-line" aria-hidden="true">
+      <span class="prompt-user">seth@lifeos</span><span class="prompt-dim">:~$</span>
+      <span class="caret"></span>
+    </div>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
 </html>

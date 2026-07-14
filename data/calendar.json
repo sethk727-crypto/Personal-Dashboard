@@ -1,0 +1,68 @@
+{
+  "semester": "Summer 2026 — Session B",
+  "timezone": "America/New_York",
+  "week": [
+    {
+      "day": "Monday",
+      "items": [
+        { "start": "07:00", "end": "08:15", "title": "Lift — Push (Chest / Shoulders / Triceps)", "category": "athletic", "location": "Campus Rec Center", "detail": "Flat bench 5x5 · OHP 4x8 · Incline DB 3x10 · Dips + lateral finisher" },
+        { "start": "09:30", "end": "09:45", "title": "Corporate Analytics — Daily Standup", "category": "internship", "location": "Teams / War Room B", "detail": "Blockers, KPI pipeline status, dashboard sprint check-in" },
+        { "start": "10:00", "end": "12:00", "title": "Internship Deep Work — KPI Pipeline", "category": "internship", "location": "Analytics Bullpen", "detail": "SQL refresh jobs + Power BI variance visuals" },
+        { "start": "14:00", "end": "15:15", "title": "SCM 4310 — Supply Chain Management", "category": "academic", "location": "Bus. Hall 214", "detail": "Module 6: Inventory Optimization & EOQ modeling" },
+        { "start": "19:30", "end": "20:15", "title": "Website Build — Mr. Long Project", "category": "project", "location": "Home Office", "detail": "Finish hero section + deploy staging review" }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "items": [
+        { "start": "07:00", "end": "08:15", "title": "Lift — Pull (Back / Biceps)", "category": "athletic", "location": "Campus Rec Center", "detail": "Deadlift 5x3 · Weighted pull-ups 4x8 · BB row 4x10 · Curl ladder" },
+        { "start": "09:30", "end": "09:45", "title": "Corporate Analytics — Daily Standup", "category": "internship", "location": "Teams / War Room B", "detail": "Sprint day 2 — variance report handoff" },
+        { "start": "11:00", "end": "12:30", "title": "SCM 4310 — Case Lab", "category": "academic", "location": "Bus. Hall 108", "detail": "Beer Game simulation — bullwhip effect debrief" },
+        { "start": "13:30", "end": "16:30", "title": "Internship Deep Work — Triage Automation", "category": "internship", "location": "Analytics Bullpen", "detail": "n8n webhook nodes → repo commit stream QA" },
+        { "start": "18:00", "end": "19:30", "title": "Networking — Supply Chain Professionals Mixer", "category": "networking", "location": "Innovation Hub, Floor 3", "detail": "Target: 3 quality contacts · bring updated resume QR" }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "items": [
+        { "start": "07:00", "end": "08:15", "title": "Lift — Legs (Squat Emphasis)", "category": "athletic", "location": "Campus Rec Center", "detail": "Back squat 5x5 · RDL 4x8 · Walking lunges · Calf raises 4x15" },
+        { "start": "09:30", "end": "09:45", "title": "Corporate Analytics — Daily Standup", "category": "internship", "location": "Teams / War Room B", "detail": "Mid-sprint demo prep" },
+        { "start": "10:00", "end": "12:00", "title": "Internship Deep Work — Forecast Models", "category": "internship", "location": "Analytics Bullpen", "detail": "Demand forecast notebook — MAPE tuning" },
+        { "start": "14:00", "end": "15:15", "title": "SCM 4310 — Supply Chain Management", "category": "academic", "location": "Bus. Hall 214", "detail": "Module 7: Logistics Network Design intro" },
+        { "start": "20:00", "end": "21:00", "title": "NLP Self-Study Block", "category": "project", "location": "Home Office", "detail": "Transformer fundamentals + agent orchestration notes" }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "items": [
+        { "start": "07:00", "end": "08:15", "title": "Lift — Push (Hypertrophy)", "category": "athletic", "location": "Campus Rec Center", "detail": "Incline BB 4x8 · Machine press 3x12 · Cable flys · Triceps giant set" },
+        { "start": "09:30", "end": "09:45", "title": "Corporate Analytics — Daily Standup", "category": "internship", "location": "Teams / War Room B", "detail": "Demo dry-run with analytics leads" },
+        { "start": "11:00", "end": "12:30", "title": "SCM 4310 — Quiz Block", "category": "academic", "location": "Bus. Hall 108", "detail": "Quiz 3: EOQ, safety stock, service levels" },
+        { "start": "17:30", "end": "19:00", "title": "Networking — Alumni Analytics Roundtable", "category": "networking", "location": "Downtown Exchange Loft", "detail": "Follow up with Marshall re: AI agent build" }
+      ]
+    },
+    {
+      "day": "Friday",
+      "items": [
+        { "start": "07:00", "end": "08:15", "title": "Lift — Pull (Volume)", "category": "athletic", "location": "Campus Rec Center", "detail": "Pendlay row 5x5 · Lat pulldown 4x12 · Face pulls · Hammer curls" },
+        { "start": "09:30", "end": "10:00", "title": "Corporate Analytics — Sprint Review", "category": "internship", "location": "War Room A", "detail": "Present KPI dashboard v2 to stakeholders" },
+        { "start": "14:00", "end": "15:15", "title": "SCM 4310 — Supply Chain Management", "category": "academic", "location": "Bus. Hall 214", "detail": "Module 7: Transportation cost trade-off matrices" },
+        { "start": "16:00", "end": "17:00", "title": "Weekly Review + Inbox Zero Sweep", "category": "project", "location": "Home Office", "detail": "Close loops: Mrs. Long call, room reset, task board groom" }
+      ]
+    },
+    {
+      "day": "Saturday",
+      "items": [
+        { "start": "09:00", "end": "10:30", "title": "Lift — Legs (Posterior Chain)", "category": "athletic", "location": "Campus Rec Center", "detail": "Front squat 4x6 · Hip thrust 4x10 · Nordic curls · Sled push" },
+        { "start": "12:00", "end": "15:00", "title": "Website Build — Mr. Long Project", "category": "project", "location": "Home Office", "detail": "Ship final revisions + client walkthrough recording" }
+      ]
+    },
+    {
+      "day": "Sunday",
+      "items": [
+        { "start": "10:00", "end": "11:00", "title": "Active Recovery — Zone 2 + Mobility", "category": "athletic", "location": "River Trail", "detail": "45 min Z2 · hips/thoracic mobility circuit" },
+        { "start": "18:00", "end": "19:30", "title": "Week Prep — SCM readings + meal prep", "category": "academic", "location": "Home Office", "detail": "Module 8 pre-read · 5-day macro prep to 180g protein floor" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "triage": {
+    "engine": "background triage nodes v2.3",
+    "window_hours": 24,
+    "scanned": 147,
+    "suppressed": 138,
+    "suppression_classes": ["newsletters", "receipts", "promotions", "social", "automated CI noise"]
+  },
+  "threshold": 6,
+  "critical": [
+    {
+      "sender": "Dana Whitfield",
+      "email": "d.whitfield@corp-analytics.com",
+      "subject": "Sprint review moved to 09:30 Friday — deck needed by EOD Thursday",
+      "received": "2026-07-14T07:58:00-04:00",
+      "urgency": 10,
+      "tag": "internship"
+    },
+    {
+      "sender": "Prof. R. Okafor",
+      "email": "okafor@university.edu",
+      "subject": "SCM 4310: Quiz 3 scope finalized — EOQ + safety stock derivations included",
+      "received": "2026-07-14T07:12:00-04:00",
+      "urgency": 9,
+      "tag": "academic"
+    },
+    {
+      "sender": "Registrar Office",
+      "email": "registrar@university.edu",
+      "subject": "Fall registration hold: advisor sign-off required before 07/18",
+      "received": "2026-07-13T16:45:00-04:00",
+      "urgency": 9,
+      "tag": "academic"
+    },
+    {
+      "sender": "Marshall Reyes",
+      "email": "marshall.reyes@gmail.com",
+      "subject": "AI agent build — intro to the OpenAI platform team contact, call this week?",
+      "received": "2026-07-13T21:20:00-04:00",
+      "urgency": 8,
+      "tag": "networking"
+    },
+    {
+      "sender": "Mr. Long",
+      "email": "longproperties@outlook.com",
+      "subject": "Website: final content edits attached — hoping to go live Friday",
+      "received": "2026-07-13T19:05:00-04:00",
+      "urgency": 8,
+      "tag": "client"
+    },
+    {
+      "sender": "IT Security",
+      "email": "security@corp-analytics.com",
+      "subject": "Action required: rotate VPN credentials before Wednesday lockout",
+      "received": "2026-07-14T06:30:00-04:00",
+      "urgency": 7,
+      "tag": "internship"
+    },
+    {
+      "sender": "Supply Chain Pros Network",
+      "email": "events@scpn.org",
+      "subject": "Tonight's mixer: attendee list + floor map (you RSVP'd)",
+      "received": "2026-07-14T08:10:00-04:00",
+      "urgency": 7,
+      "tag": "networking"
+    },
+    {
+      "sender": "Campus Rec",
+      "email": "rec@university.edu",
+      "subject": "Squat racks 1-3 closed Thu AM for maintenance — plan split accordingly",
+      "received": "2026-07-13T14:22:00-04:00",
+      "urgency": 6,
+      "tag": "athletic"
+    },
+    {
+      "sender": "Mrs. Long",
+      "email": "plong.home@gmail.com",
+      "subject": "Quick call re: invoice + one more page idea",
+      "received": "2026-07-13T18:40:00-04:00",
+      "urgency": 6,
+      "tag": "client"
+    }
+  ]
+}

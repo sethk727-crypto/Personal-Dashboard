@@ -1,0 +1,31 @@
+{
+  "date": "2026-07-14",
+  "profile": "Seth K — Cut Phase / Cognitive Priority",
+  "targets": {
+    "maintenance_calories": 2800,
+    "calories": 2200,
+    "protein_g": 180,
+    "carbs_g": 190,
+    "fats_g": 70,
+    "planned_deficit": 600
+  },
+  "consumed": {
+    "calories": 200,
+    "protein_g": 18,
+    "carbs_g": 2,
+    "fats_g": 14
+  },
+  "meals": [
+    {
+      "time": "08:40",
+      "name": "Whey isolate + almond butter",
+      "calories": 200,
+      "protein_g": 18,
+      "carbs_g": 2,
+      "fats_g": 14,
+      "source": "Nutrition_Seth_2026-07-12_22-06-25.md"
+    }
+  ],
+  "hydration_oz": 24,
+  "last_sync": "2026-07-14T08:42:00-04:00"
+}
