@@ -440,7 +440,7 @@ function renderMarkdown(raw) {
 
 async function loadNotes() {
   let notes = [];
-  let suppressed = 0;
+  const quarantined = [];
   let fromCache = false;
   try {
     const index = await fetchJSON(CONFIG.paths.notesIndex);
@@ -454,12 +454,13 @@ async function loadNotes() {
     results.forEach((res, i) => {
       const file = files[i];
       if (res.status !== "fulfilled") {
-        suppressed += 1;
+        quarantined.push({ file, date: parseNoteDate(file) });
         return;
       }
       const content = res.value || "";
       if (!content.trim() || NOTE_ARTIFACT_RE.test(content)) {
-        suppressed += 1; // empty or unresolved automation template → quarantine
+        // empty or unresolved automation template → quarantine
+        quarantined.push({ file, date: parseNoteDate(file) });
         return;
       }
       notes.push({
@@ -471,32 +472,40 @@ async function loadNotes() {
     });
   } catch (err) {
     notes = FALLBACK.notes.slice();
-    suppressed = 0;
     fromCache = true;
     bootLog(`MOD-02 manifest unreachable (${err.message}) — offline cache engaged`, "warn");
   }
 
   notes.sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
+
+  // The pipeline is only considered faulted if corruption is CURRENT: a corrupt
+  // payload as recent as (or newer than) the newest clean transcript. Historic
+  // quarantined files older than the latest clean capture are just archive noise.
+  const latestClean = notes[0]?.date?.getTime() || 0;
+  const recentFault =
+    quarantined.length > 0 &&
+    (!notes.length || quarantined.some((q) => (q.date?.getTime() || 0) >= latestClean));
+
   state.notes = notes;
-  state.notesSuppressed = suppressed;
-  if (!fromCache && suppressed > notes.length) {
+  state.notesSuppressed = quarantined.length;
+  if (!fromCache && recentFault) {
     bootLog(
-      `MOD-02 pipeline fault — ${suppressed} corrupt payloads vs ${notes.length} clean: check the n8n GitHub node (content field must be in Expression mode)`,
+      `MOD-02 pipeline fault — latest captures arriving corrupt: check the n8n GitHub node (content field must be in Expression mode)`,
       "warn"
     );
   }
-  renderNotes(notes, suppressed, fromCache);
+  renderNotes(notes, quarantined.length, fromCache, recentFault);
 }
 
-/* Chip copy for the notes module: surface a capture-pipeline fault when
-   quarantined payloads outnumber clean transcripts. */
-function notesChip(notes, suppressed, fromCache) {
+/* Chip copy for the notes module: surface a capture-pipeline fault only while
+   the most recent payloads are corrupt; healthy stream shows the live count. */
+function notesChip(notes, fromCache, recentFault) {
   if (fromCache) return { text: "OFFLINE CACHE", cls: "chip-warn" };
-  if (suppressed > notes.length) return { text: "PIPELINE FAULT", cls: "chip-warn" };
+  if (recentFault) return { text: "PIPELINE FAULT", cls: "chip-warn" };
   return { text: `${notes.length} LIVE`, cls: "chip-ok" };
 }
 
-function renderNotes(notes, suppressed, fromCache) {
+function renderNotes(notes, suppressed, fromCache, recentFault) {
   const feed = $("#notes-feed");
   const count = $("#notes-count");
   const suppressedEl = $("#notes-suppressed");
@@ -509,7 +518,7 @@ function renderNotes(notes, suppressed, fromCache) {
   // user is mid-read and from re-announcing the whole feed to screen readers.
   const signature = `${suppressed}|${notes.map((n) => n.file + ":" + n.content.length).join("|")}`;
   if (feed.dataset.signature === signature && feed.children.length) {
-    const chip = notesChip(notes, suppressed, fromCache);
+    const chip = notesChip(notes, fromCache, recentFault);
     setModuleState("notes", fromCache ? "warn" : "ok", chip.text, chip.cls);
     return;
   }
@@ -553,7 +562,7 @@ function renderNotes(notes, suppressed, fromCache) {
     });
   }
 
-  const chip = notesChip(notes, suppressed, fromCache);
+  const chip = notesChip(notes, fromCache, recentFault);
   setModuleState("notes", fromCache ? "warn" : "ok", chip.text, chip.cls);
 }
 
