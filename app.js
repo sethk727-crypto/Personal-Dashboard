@@ -2,7 +2,7 @@
    LIFEOS // TERMINAL — APPLICATION ENGINE
    Vanilla ES module · zero dependencies · GitHub Pages relative pathing
    Modules: clock/ticker core, nutrition telemetry, voice-note timeline,
-            schedule tracker, email triage, quantitative hedge simulator
+            schedule tracker, email triage, action command board
    ========================================================================== */
 
 /* ------------------------------ CONFIG ------------------------------------ */
@@ -19,7 +19,7 @@ const CONFIG = {
   fetchTimeoutMs: 8000,
   dataRefreshMs: 5 * 60 * 1000, // full telemetry re-sync every 5 minutes
   scheduleTickMs: 60 * 1000, // temporal state re-evaluation every 60 seconds
-  hedgeDefaults: { payout: 2000, stake: 50, odds: -110 },
+  taskStoreKey: "lifeos.actionState.v1", // localStorage key for action check-offs
 };
 
 /* ------------------------------ STATE -------------------------------------- */
@@ -33,7 +33,7 @@ const state = {
   scheduleFromCache: false,
   notesSignature: null,
   emails: null,
-  hedge: { payout: 2000, stake: 50, odds: -110, amount: 0 },
+  actionCounts: null, // { open, done, total } compiled from voice-note tasks
   moduleStatus: {}, // moduleKey -> "ok" | "warn" | "err"
 };
 
@@ -101,10 +101,6 @@ function escapeHTML(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 }
-
-const fmtMoney = (n) =>
-  (n < 0 ? "-$" : "$") +
-  Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fmtInt = (n) => Math.round(n).toLocaleString("en-US");
 
@@ -256,11 +252,15 @@ function updateTicker() {
       items.push({ cls: "tick-blue", html: `NEXT BLOCK <b>${escapeHTML(next.start)} ${escapeHTML(shortTitle(next.title))}</b>` });
     }
   }
-  const hedge = computeHedge(state.hedge.payout, state.hedge.stake, americanToDecimal(state.hedge.odds), state.hedge.amount);
-  if (hedge.valid) {
-    items.push({ cls: "tick-green", html: `EQUAL-PROFIT LOCK <b>${escapeHTML(fmtMoney(hedge.lockAtOptimal))}</b>` });
+  if (state.actionCounts) {
+    items.push({
+      cls: state.actionCounts.open > 0 ? "tick-amber" : "tick-green",
+      html: `OPEN ACTIONS <b>${state.actionCounts.open}</b>`,
+    });
+    if (state.actionCounts.done > 0) {
+      items.push({ cls: "tick-green", html: `CLEARED <b>${state.actionCounts.done}</b>` });
+    }
   }
-  items.push({ cls: "", html: `PAYOUT ANCHOR <b>${escapeHTML(fmtMoney(state.hedge.payout))}</b>` });
 
   if (!items.length) return;
   const html = items
@@ -479,7 +479,21 @@ async function loadNotes() {
   notes.sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
   state.notes = notes;
   state.notesSuppressed = suppressed;
+  if (!fromCache && suppressed > notes.length) {
+    bootLog(
+      `MOD-02 pipeline fault — ${suppressed} corrupt payloads vs ${notes.length} clean: check the n8n GitHub node (content field must be in Expression mode)`,
+      "warn"
+    );
+  }
   renderNotes(notes, suppressed, fromCache);
+}
+
+/* Chip copy for the notes module: surface a capture-pipeline fault when
+   quarantined payloads outnumber clean transcripts. */
+function notesChip(notes, suppressed, fromCache) {
+  if (fromCache) return { text: "OFFLINE CACHE", cls: "chip-warn" };
+  if (suppressed > notes.length) return { text: "PIPELINE FAULT", cls: "chip-warn" };
+  return { text: `${notes.length} LIVE`, cls: "chip-ok" };
 }
 
 function renderNotes(notes, suppressed, fromCache) {
@@ -495,12 +509,8 @@ function renderNotes(notes, suppressed, fromCache) {
   // user is mid-read and from re-announcing the whole feed to screen readers.
   const signature = `${suppressed}|${notes.map((n) => n.file + ":" + n.content.length).join("|")}`;
   if (feed.dataset.signature === signature && feed.children.length) {
-    setModuleState(
-      "notes",
-      fromCache ? "warn" : "ok",
-      fromCache ? "OFFLINE CACHE" : `${notes.length} LIVE`,
-      fromCache ? "chip-warn" : "chip-ok"
-    );
+    const chip = notesChip(notes, suppressed, fromCache);
+    setModuleState("notes", fromCache ? "warn" : "ok", chip.text, chip.cls);
     return;
   }
   // Preserve which notes are expanded across a genuine rebuild, keyed by file.
@@ -543,12 +553,8 @@ function renderNotes(notes, suppressed, fromCache) {
     });
   }
 
-  setModuleState(
-    "notes",
-    fromCache ? "warn" : "ok",
-    fromCache ? "OFFLINE CACHE" : `${notes.length} LIVE`,
-    fromCache ? "chip-warn" : "chip-ok"
-  );
+  const chip = notesChip(notes, suppressed, fromCache);
+  setModuleState("notes", fromCache ? "warn" : "ok", chip.text, chip.cls);
 }
 
 /* ============================================================================
@@ -750,198 +756,165 @@ function renderEmails(data, fromCache) {
 }
 
 /* ============================================================================
-   MODULE 05 · QUANTITATIVE RISK & HEDGING SIMULATOR
-   Pure cash-flow math around a parlay payout anchor.
-     decimal line d:  +odds → 1 + odds/100 · −odds → 1 + 100/|odds|
-     equal-profit hedge H* = P / d          (both branches settle identically)
-     guaranteed lock @ H*  = P − S − P/d
-     break-even floor      = S / (d − 1)    (hedge branch covers the stake)
-     max hedge ceiling     = P − S          (parlay branch stays non-negative)
+   MODULE 05 · ACTION COMMAND BOARD
+   Compiles every task line ("- [ ] ..." / "* [x] ...") spoken into the phone
+   across all clean transcripts, dedupes them, ranks by urgency, and renders a
+   tap-to-complete checklist. Completion overrides persist in localStorage so
+   checked items survive reloads and 5-minute re-syncs on this device.
    ========================================================================== */
-function americanToDecimal(odds) {
-  const o = Number(odds);
-  if (!Number.isFinite(o) || Math.abs(o) < 100) return NaN;
-  return o > 0 ? 1 + o / 100 : 1 + 100 / Math.abs(o);
+const TASK_LINE_RE = /^[-*]\s*\[( |x|X)\]\s*(.+)$/;
+
+function hashId(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i += 1) {
+    h = ((h << 5) + h + str.charCodeAt(i)) | 0;
+  }
+  return (h >>> 0).toString(36);
 }
 
-function computeHedge(payout, stake, decimal, hedgeStake) {
-  const P = Number(payout);
-  const S = Number(stake);
-  const d = Number(decimal);
-  const H = Number(hedgeStake);
-  const valid = Number.isFinite(P) && Number.isFinite(S) && Number.isFinite(d) && Number.isFinite(H) && P > 0 && S >= 0 && H >= 0 && d > 1;
-  if (!valid) {
-    return { valid: false };
-  }
-  const profitParlayHits = P - S - H;
-  const profitHedgeHits = H * (d - 1) - S;
-  const optimal = P / d;
-  const lockAtOptimal = P - S - optimal;
-  const floor = S / (d - 1);
-  const ceiling = P - S;
-  const locked = Math.min(profitParlayHits, profitHedgeHits);
-  const atRisk = S + H;
-  return {
-    valid: true,
-    profitParlayHits,
-    profitHedgeHits,
-    optimal,
-    lockAtOptimal,
-    floor,
-    ceiling,
-    locked,
-    roi: atRisk > 0 ? locked / atRisk : 0,
-  };
-}
-
-function readHedgeInputs() {
-  state.hedge.payout = Number($("#hedge-payout")?.value) || 0;
-  state.hedge.stake = Number($("#hedge-stake")?.value) || 0;
-  state.hedge.odds = Number($("#hedge-odds")?.value) || 0;
-  state.hedge.amount = Number($("#hedge-amount")?.value) || 0;
-}
-
-function renderHedge() {
-  const { payout, stake, odds, amount } = state.hedge;
-  const decimal = americanToDecimal(odds);
-  const result = computeHedge(payout, stake, decimal, amount);
-
-  const oddsInput = $("#hedge-odds");
-  if (oddsInput) oddsInput.classList.toggle("input-invalid", !Number.isFinite(decimal));
-
-  const verdict = $("#hedge-verdict");
-  const setOut = (id, text, cls) => {
-    const el = $(id);
-    if (!el) return;
-    el.textContent = text;
-    if (cls !== undefined) el.className = cls;
-  };
-
-  if (!result.valid) {
-    if (verdict) {
-      verdict.textContent = "INVALID PARAMETERS — AMERICAN LINES REQUIRE |ODDS| ≥ 100";
-      verdict.className = "hedge-verdict verdict-err";
-    }
-    ["#out-decimal", "#out-optimal", "#out-lock", "#out-floor", "#out-ceiling", "#out-scenario-a", "#out-scenario-b", "#out-roi"].forEach(
-      (id) => setOut(id, "—")
-    );
-    const zone = $("#window-zone");
-    const marker = $("#window-marker");
-    if (zone) zone.style.width = "0%";
-    if (marker) marker.style.left = "0%";
-    const readout = $("#window-readout");
-    if (readout) readout.textContent = "—";
-    return;
-  }
-
-  setOut("#out-decimal", decimal.toFixed(3));
-  setOut("#out-optimal", fmtMoney(result.optimal));
-  setOut("#out-lock", fmtMoney(result.lockAtOptimal), result.lockAtOptimal >= 0 ? "accent-green" : "accent-danger");
-  setOut("#out-floor", fmtMoney(result.floor));
-  setOut("#out-ceiling", fmtMoney(result.ceiling));
-  setOut("#out-scenario-a", fmtMoney(result.profitParlayHits), result.profitParlayHits >= 0 ? "accent-green" : "accent-danger");
-  setOut("#out-scenario-b", fmtMoney(result.profitHedgeHits), result.profitHedgeHits >= 0 ? "accent-green" : "accent-danger");
-  setOut("#out-roi", `${(result.roi * 100).toFixed(1)}%`, result.roi >= 0 ? "accent-green" : "accent-danger");
-
-  if (verdict) {
-    if (amount < result.floor && result.profitHedgeHits < 0) {
-      verdict.textContent = `EXPOSED — PARLAY MISS COSTS ${fmtMoney(Math.abs(result.profitHedgeHits))}`;
-      verdict.className = "hedge-verdict verdict-risk";
-    } else if (amount > result.ceiling) {
-      verdict.textContent = `OVER-HEDGED — PARLAY HIT NETS ${fmtMoney(result.profitParlayHits)}`;
-      verdict.className = "hedge-verdict verdict-risk";
-    } else {
-      verdict.textContent = `LOCKED — ${fmtMoney(result.locked)} GUARANTEED ON EITHER BRANCH`;
-      verdict.className = "hedge-verdict verdict-locked";
-    }
-  }
-
-  // Protected profit window visual, domain [0, payout]
-  const domain = Math.max(payout, 1);
-  const zoneLeft = clamp((result.floor / domain) * 100, 0, 100);
-  const zoneRight = clamp((result.ceiling / domain) * 100, 0, 100);
-  const zone = $("#window-zone");
-  if (zone) {
-    zone.style.left = `${zoneLeft}%`;
-    zone.style.width = `${Math.max(0, zoneRight - zoneLeft)}%`;
-  }
-  const marker = $("#window-marker");
-  if (marker) marker.style.left = `calc(${clamp((amount / domain) * 100, 0, 100)}% - 1.5px)`;
-  const readout = $("#window-readout");
-  if (readout) {
-    readout.textContent =
-      result.floor < result.ceiling
-        ? `${fmtMoney(result.floor)} → ${fmtMoney(result.ceiling)}`
-        : "NO PROTECTED WINDOW";
-  }
-
-  // Keep the sweep slider in sync with the payout domain and current stake
-  const slider = $("#hedge-slider");
-  if (slider) {
-    slider.max = String(Math.max(1, Math.round(payout)));
-    slider.value = String(clamp(Math.round(amount), 0, Number(slider.max)));
-    slider.style.setProperty("--slider-pct", `${clamp((amount / Number(slider.max)) * 100, 0, 100)}%`);
+function loadTaskState() {
+  try {
+    return JSON.parse(localStorage.getItem(CONFIG.taskStoreKey)) || {};
+  } catch {
+    return {};
   }
 }
 
-function initHedge() {
-  const form = $("#hedge-form");
-  if (!form) return;
-
-  const recompute = () => {
-    readHedgeInputs();
-    renderHedge();
-    updateTicker();
-  };
-
-  ["#hedge-payout", "#hedge-stake", "#hedge-odds", "#hedge-amount"].forEach((id) => {
-    $(id)?.addEventListener("input", recompute);
-  });
-
-  $("#hedge-slider")?.addEventListener("input", (e) => {
-    const amountInput = $("#hedge-amount");
-    if (amountInput) amountInput.value = e.target.value;
-    recompute();
-  });
-
-  $("#btn-optimal")?.addEventListener("click", () => {
-    readHedgeInputs();
-    const d = americanToDecimal(state.hedge.odds);
-    const r = computeHedge(state.hedge.payout, state.hedge.stake, d, state.hedge.amount);
-    if (r.valid) {
-      const amountInput = $("#hedge-amount");
-      if (amountInput) amountInput.value = r.optimal.toFixed(2);
-      recompute();
-      bootLog(`MOD-05 equal-profit lock set — H* ${fmtMoney(r.optimal)} locks ${fmtMoney(r.lockAtOptimal)}`, "ok");
-    }
-  });
-
-  $("#btn-floor")?.addEventListener("click", () => {
-    readHedgeInputs();
-    const d = americanToDecimal(state.hedge.odds);
-    const r = computeHedge(state.hedge.payout, state.hedge.stake, d, state.hedge.amount);
-    if (r.valid) {
-      const amountInput = $("#hedge-amount");
-      if (amountInput) amountInput.value = r.floor.toFixed(2);
-      recompute();
-      bootLog(`MOD-05 break-even floor set — ${fmtMoney(r.floor)} neutralizes downside`, "info");
-    }
-  });
-
-  form.addEventListener("submit", (e) => e.preventDefault());
-
-  // Pre-configure: seed the hedge stake at the equal-profit point for the
-  // $2,000 payout anchor so the workspace opens on a locked position.
-  readHedgeInputs();
-  const d = americanToDecimal(state.hedge.odds);
-  const seeded = computeHedge(state.hedge.payout, state.hedge.stake, d, 0);
-  if (seeded.valid) {
-    const amountInput = $("#hedge-amount");
-    if (amountInput) amountInput.value = seeded.optimal.toFixed(2);
+function saveTaskState(overrides) {
+  try {
+    localStorage.setItem(CONFIG.taskStoreKey, JSON.stringify(overrides));
+  } catch {
+    /* storage unavailable (private mode) — check-offs just won't persist */
   }
-  readHedgeInputs();
-  renderHedge();
-  bootLog("MOD-05 hedge simulator armed — $2,000.00 payout anchor loaded", "ok");
+}
+
+const URGENCY_RANK = { "urgency-high": 0, "urgency-medium": 1, "urgency-low": 2 };
+
+function compileTasks() {
+  const raw = [];
+  state.notes.forEach((note) => {
+    const urgency = classifyUrgency(note.content);
+    note.content.split(/\r?\n/).forEach((line) => {
+      const m = line.trim().match(TASK_LINE_RE);
+      if (!m) return;
+      const text = m[2].trim();
+      if (!text) return;
+      raw.push({
+        id: hashId(note.file + "::" + text.toLowerCase()),
+        text,
+        file: note.file,
+        date: note.date,
+        urgencyCls: urgency.cls,
+        doneInSource: m[1].toLowerCase() === "x",
+      });
+    });
+  });
+
+  // Repeated captures of the same task across notes collapse to the most
+  // recent mention (normalized on letters/digits so punctuation variants match).
+  raw.sort((a, b) => (b.date?.getTime() || 0) - (a.date?.getTime() || 0));
+  const seen = new Set();
+  const tasks = [];
+  for (const t of raw) {
+    const key = t.text.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    tasks.push(t);
+  }
+  return tasks;
+}
+
+function composeBrief(tasks, overrides) {
+  const now = new Date();
+  const open = tasks.filter((t) => !((overrides[t.id] ?? t.doneInSource)));
+  const critical = open.filter((t) => t.urgencyCls === "urgency-high").length;
+  const parts = [`${DAY_ABBR[now.getDay()]} ${MONTH_ABBR[now.getMonth()]} ${now.getDate()}`];
+  parts.push(`${state.notes.length} transcripts on stream`);
+  parts.push(`${open.length} open actions${critical ? ` (${critical} critical)` : ""}`);
+  const next = nextScheduleItem();
+  if (next) parts.push(`next block ${next.start} ${shortTitle(next.title)}`);
+  if (state.macros) {
+    const floor = Number(state.macros.targets?.protein_g) || CONFIG.proteinFloorG;
+    const gap = Math.max(0, floor - (Number(state.macros.consumed?.protein_g) || 0));
+    if (gap > 0) parts.push(`protein gap ${fmtInt(gap)}g`);
+  }
+  if (state.emails) parts.push(`${state.emails.critical.length} critical mails`);
+  return ("▸ " + parts.join(" · ")).toUpperCase();
+}
+
+function renderActionBoard() {
+  const list = $("#action-list");
+  if (!list) return;
+  const overrides = loadTaskState();
+  const tasks = compileTasks();
+
+  const resolved = (t) => overrides[t.id] ?? t.doneInSource;
+  const done = tasks.filter(resolved).length;
+  const open = tasks.length - done;
+  state.actionCounts = { open, done, total: tasks.length };
+
+  // Open items first (critical → low, newest first), cleared items sink.
+  const ordered = tasks.slice().sort((a, b) => {
+    const ra = resolved(a) ? 1 : 0;
+    const rb = resolved(b) ? 1 : 0;
+    if (ra !== rb) return ra - rb;
+    const ua = URGENCY_RANK[a.urgencyCls] ?? 2;
+    const ub = URGENCY_RANK[b.urgencyCls] ?? 2;
+    if (ua !== ub) return ua - ub;
+    return (b.date?.getTime() || 0) - (a.date?.getTime() || 0);
+  });
+
+  list.innerHTML = ordered.length
+    ? ordered
+        .map((t) => {
+          const isDone = resolved(t);
+          const dateStr = t.date ? `${MONTH_ABBR[t.date.getMonth()]} ${t.date.getDate()}` : "—";
+          return `
+      <li>
+        <button type="button" class="action-item ${t.urgencyCls}${isDone ? " done" : ""}" data-task-id="${t.id}" aria-pressed="${isDone}">
+          <span class="action-check" aria-hidden="true">${isDone ? "✓" : "◻"}</span>
+          <span class="action-text">${escapeHTML(t.text)}</span>
+          <span class="action-meta">${dateStr}</span>
+        </button>
+      </li>`;
+        })
+        .join("")
+    : `<li class="action-empty">No action items captured yet — speak a task into your phone and it lands here on the next sync.</li>`;
+
+  $$(".action-item", list).forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.taskId;
+      const current = loadTaskState();
+      const task = tasks.find((t) => t.id === id);
+      const wasDone = current[id] ?? task?.doneInSource ?? false;
+      current[id] = !wasDone;
+      saveTaskState(current);
+      renderActionBoard();
+      updateTicker();
+    });
+  });
+
+  const label = $("#actions-progress-label");
+  if (label) label.textContent = `${done} / ${tasks.length}`;
+  const pct = tasks.length ? (done / tasks.length) * 100 : 0;
+  const bar = $("#actions-progress-bar");
+  if (bar) bar.style.width = `${pct}%`;
+  const track = $("#actions-progress-track");
+  if (track) {
+    track.setAttribute("aria-valuemax", String(tasks.length));
+    track.setAttribute("aria-valuenow", String(done));
+  }
+
+  const chip = $("#actions-chip");
+  if (chip) {
+    chip.textContent = open > 0 ? `${open} OPEN` : tasks.length ? "ALL CLEAR" : "STANDBY";
+    chip.className = `panel-chip ${open > 0 ? "chip-amber" : tasks.length ? "chip-ok" : ""}`.trim();
+  }
+  const led = $('[data-module-led="actions"]');
+  if (led) led.dataset.state = "ok";
+
+  const brief = $("#daily-brief");
+  if (brief) brief.textContent = composeBrief(tasks, overrides);
 }
 
 /* ============================================================================
@@ -950,6 +923,7 @@ function initHedge() {
 async function syncAllStreams(reason) {
   bootLog(`telemetry sync initiated — ${reason}`, "info");
   await Promise.allSettled([loadNutrition(), loadNotes(), loadSchedule(), loadEmails()]);
+  renderActionBoard();
   updateTicker();
   bootLog("telemetry sync cycle complete", "ok");
 }
@@ -958,8 +932,6 @@ function init() {
   bootLog("LIFEOS terminal core online — vanilla runtime, zero dependencies", "ok");
   tickClock();
   setInterval(tickClock, 1000);
-
-  initHedge();
 
   syncAllStreams("initial boot");
 

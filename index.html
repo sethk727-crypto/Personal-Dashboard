@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="dark" />
-  <meta name="description" content="LifeOS — personal terminal command center: nutrition telemetry, voice-note timeline, schedule tracker, email triage, and quantitative hedge simulator." />
+  <meta name="description" content="LifeOS — personal terminal command center: nutrition telemetry, voice-note timeline, schedule tracker, email triage, and a voice-driven action command board." />
   <title>LifeOS // Terminal Command Center</title>
   <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'&gt;&lt;rect width='16' height='16' rx='3' fill='%23090D16'/&gt;&lt;path d='M4 5l3 3-3 3' stroke='%233b82f6' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/&gt;&lt;path d='M8.5 11h3.5' stroke='%2310b981' stroke-width='1.6' stroke-linecap='round'/&gt;&lt;/svg&gt;" />
   <link rel="stylesheet" href="./style.css" />
@@ -116,82 +116,35 @@
       </div>
     </section>
 
-    <!-- ===== MODULE 05 · QUANTITATIVE RISK & HEDGING SIMULATOR ===== -->
-    <section class="panel span-4" id="module-hedge" aria-labelledby="hedge-title">
+    <!-- ===== MODULE 05 · ACTION COMMAND BOARD (compiled from voice captures) ===== -->
+    <section class="panel span-4" id="module-actions" aria-labelledby="actions-title">
       <header class="panel-head">
         <div class="panel-id">
-          <span class="led" data-module-led="hedge" data-state="ok" aria-hidden="true"></span>
-          <h2 class="panel-title" id="hedge-title">MOD-05 :: QUANT RISK &amp; HEDGING SIMULATOR</h2>
+          <span class="led" data-module-led="actions" aria-hidden="true"></span>
+          <h2 class="panel-title" id="actions-title">MOD-05 :: ACTION COMMAND BOARD</h2>
         </div>
-        <span class="panel-chip chip-amber">LIVE MATH</span>
+        <span class="panel-chip" id="actions-chip">COMPILING</span>
       </header>
 
       <div class="panel-body">
-        <form class="hedge-form" id="hedge-form" autocomplete="off">
-          <div class="field-row">
-            <label class="field">
-              <span class="field-label">PARLAY PAYOUT ANCHOR ($)</span>
-              <input type="number" id="hedge-payout" inputmode="decimal" min="0" step="10" value="2000" />
-            </label>
-            <label class="field">
-              <span class="field-label">PARLAY STAKE ($)</span>
-              <input type="number" id="hedge-stake" inputmode="decimal" min="0" step="5" value="50" />
-            </label>
-          </div>
-          <div class="field-row">
-            <label class="field">
-              <span class="field-label">LIVE HEDGE LINE (AMERICAN)</span>
-              <input type="number" id="hedge-odds" inputmode="numeric" step="5" value="-110" />
-            </label>
-            <label class="field">
-              <span class="field-label">HEDGE STAKE ($)</span>
-              <input type="number" id="hedge-amount" inputmode="decimal" min="0" step="5" value="0" />
-            </label>
-          </div>
+        <div class="brief" id="daily-brief" role="status">▸ COMPILING DAILY BRIEF…</div>
 
-          <label class="field slider-field">
-            <span class="field-label">HEDGE STAKE SWEEP</span>
-            <input type="range" id="hedge-slider" min="0" max="2000" step="1" value="0" aria-label="Hedge stake sweep" />
-          </label>
-
-          <div class="hedge-actions">
-            <button type="button" class="btn btn-blue" id="btn-optimal">SET EQUAL-PROFIT LOCK</button>
-            <button type="button" class="btn btn-ghost" id="btn-floor">SET BREAK-EVEN FLOOR</button>
-          </div>
-        </form>
-
-        <div class="hedge-verdict" id="hedge-verdict" role="status">AWAITING PARAMETERS…</div>
-
-        <div class="window-block">
+        <div class="action-progress">
           <div class="bar-head">
-            <span class="bar-label">PROTECTED PROFIT WINDOW</span>
-            <span class="bar-readout" id="window-readout">—</span>
+            <span class="bar-label" id="actions-progress-caption">MISSION COMPLETION <span class="bar-target">// ALL CAPTURED ACTIONS</span></span>
+            <span class="bar-readout" id="actions-progress-label">0 / 0</span>
           </div>
-          <div class="window-bar" id="window-bar" aria-hidden="true">
-            <div class="window-zone" id="window-zone"></div>
-            <div class="window-marker" id="window-marker"></div>
-          </div>
-          <div class="window-legend">
-            <span class="legend-item"><i class="swatch swatch-amber"></i>EXPOSED</span>
-            <span class="legend-item"><i class="swatch swatch-green"></i>PROTECTED</span>
-            <span class="legend-item"><i class="swatch swatch-blue"></i>CURRENT HEDGE</span>
+          <div class="progress" role="progressbar" aria-labelledby="actions-progress-caption" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" id="actions-progress-track">
+            <div class="progress-fill fill-green" id="actions-progress-bar" style="width:0%"></div>
           </div>
         </div>
 
-        <dl class="hedge-readouts">
-          <div class="readout"><dt>DECIMAL LINE</dt><dd id="out-decimal">—</dd></div>
-          <div class="readout"><dt>EQUAL-PROFIT HEDGE H*</dt><dd id="out-optimal" class="accent-blue">—</dd></div>
-          <div class="readout"><dt>GUARANTEED LOCK @ H*</dt><dd id="out-lock" class="accent-green">—</dd></div>
-          <div class="readout"><dt>BREAK-EVEN FLOOR</dt><dd id="out-floor" class="accent-amber">—</dd></div>
-          <div class="readout"><dt>MAX HEDGE CEILING</dt><dd id="out-ceiling" class="accent-amber">—</dd></div>
-          <div class="readout"><dt>P/L — PARLAY HITS</dt><dd id="out-scenario-a">—</dd></div>
-          <div class="readout"><dt>P/L — HEDGE HITS</dt><dd id="out-scenario-b">—</dd></div>
-          <div class="readout"><dt>LOCKED ROI ON RISK</dt><dd id="out-roi">—</dd></div>
-        </dl>
+        <ul class="action-list" id="action-list" aria-label="Action items compiled from phone voice captures"></ul>
 
-        <p class="hedge-note">
-          Model: H* = Payout ÷ DecimalLine equalizes both branches; floor = Stake ÷ (DecimalLine − 1)
-          neutralizes downside; ceiling = Payout − Stake caps over-hedge. All figures are pre-vig cash flows.
+        <p class="module-footnote">
+          Compiled live from every clean transcript in the <code>./notes/</code> capture stream — speak a task
+          into your phone and it lands here on the next sync. Tap an item to mark it done; completion state
+          persists on this device.
         </p>
       </div>
     </section>

@@ -1,0 +1,55 @@
+name: Rebuild Notes Manifest
+
+# Closes the phone → site loop:
+#   phone voice note → n8n commits notes/<file>.md → this action regenerates
+#   notes/index.json → the push triggers a GitHub Pages redeploy → the new
+#   transcript and its action items appear on the live dashboard.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'notes/**'
+      - '!notes/index.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild-manifest:
+    # Guard against self-triggering on the manifest commit
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Regenerate notes/index.json
+        run: |
+          python3 - <<'PY'
+          import json, os, datetime
+
+          files = sorted(f for f in os.listdir("notes") if f.endswith(".md"))
+          manifest = {
+              "generated": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+              "source": "n8n webhook streaming node → GitHub commit pipeline",
+              "files": files,
+          }
+          with open("notes/index.json", "w") as fh:
+              json.dump(manifest, fh, indent=2)
+              fh.write("\n")
+          print(f"Manifest rebuilt with {len(files)} entries")
+          PY
+
+      - name: Commit manifest if changed
+        run: |
+          if git diff --quiet notes/index.json; then
+            echo "Manifest unchanged — nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add notes/index.json
+          git commit -m "chore: rebuild notes manifest [auto]"
+          git push
